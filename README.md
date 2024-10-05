@@ -3,7 +3,7 @@
 # Sistem Informasi Manajemen Keuangan Sekolah
 
 Sistem informasi manajemen keuangan sekolah ini merupakan sistem yang dipakai untuk mengontrol keuangan sekolah dengan *custom* sesuai dengan permintaan sekolah sebelumnya
-
+<!-- 
 ## Cara Pemasangan
 1. *Clone* GitHub *repository* [ini](https://github.com/aNdr3W03/si-keuangan.git)
 2. *Upload* *database*, ada 2 cara:
@@ -55,4 +55,4 @@ Sistem informasi manajemen keuangan sekolah ini merupakan sistem yang dipakai un
 4. Export Rekap Uang Masuk dan Keluar ke Pdf
 5. Manajemen *Database* dengan sistem serverSide agar aplikasi ringan jika data sudah banyak
 6. Grafik Uang Masuk dan Keluar
-7. CRUD AJAX dengan JQuery Validation
+7. CRUD AJAX dengan JQuery Validation -->
