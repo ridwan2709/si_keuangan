@@ -1,0 +1,144 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class SPP extends CI_Controller {
+
+	private $parents = 'SPP';
+	private $icon	 = 'fa fa-money';
+	var $table 		 = 'spp';
+
+	function __construct(){
+		parent::__construct();
+
+		is_login();
+		get_breadcrumb();
+		//$this->load->model('M_'.$this->parents,'mod');
+		$this->load->library('form_validation');
+		$this->load->library('Datatables'); 
+	}
+
+	public function index(){
+
+		$this->breadcrumb->append_crumb('SI Keuangan ','Beranda');
+		$this->breadcrumb->append_crumb('Uang '.$this->parents,$this->parents);
+
+		$data['title']	= 'Pembayaran Uang '.$this->parents.' | SI Keuangan ';
+		$data['judul']	= 'Pembayaran Uang '.$this->parents;
+		$data['icon']	= $this->icon;
+
+	$this->template->views('Backend/'.$this->parents.'/v_'.$this->parents,$data);
+	}
+
+	function getData (){
+		header('Content-Type:application/json');
+		$kls = $this->input->post('is_kelas');
+		echo $this->M_General->getSiswa($kls);
+	}
+
+	function getSPP(){
+		header('Content-Type:application/json');
+		$n = $this->db->query("SELECT nominal FROM pembayaran WHERE id = 1")->row_array();
+		echo json_encode($n['nominal']);
+	}
+
+	function Detail($id){
+		$this->breadcrumb->append_crumb('SI Keuangan ',base_url());
+		$this->breadcrumb->append_crumb($this->parents,base_url('SPP'));
+		$this->breadcrumb->append_crumb('Detail Pembayaran SPP',$this->parents);
+
+		$data['title']	= 'Pembayaran Uang '.$this->parents.' | SI Keuangan ';
+		$data['judul']	= 'Pembayaran Uang '.$this->parents;
+		$data['icon']	= $this->icon;
+		$data['isi']	= $this->M_General->getByID('spp','id_siswa',$id,'DESC')->result();
+
+	$this->template->views('Backend/'.$this->parents.'/v_Detail',$data);
+
+	}
+
+	function Simpan(){
+
+		$id = $this->input->post('id',TRUE);
+		$bln = filter_string($this->input->post('bulan',TRUE));
+		$cek = $this->db->query("SELECT id FROM spp WHERE id_siswa = '$id' AND bulan = '$bln' ")->num_rows();
+
+		if ($cek > 0){
+			$data['status'] = FALSE;
+    	}
+    	else{
+
+    		$total = filter_string($this->input->post('harga',TRUE));
+    		$insert = array(
+	                    'id_siswa'	=> $id,
+	                    'time'	   => waktu(),
+	                    'bulan'		=> $bln,
+	                    'nominal'	=> $total
+	                );
+
+	        $insert = $this->M_General->insert($this->table,$insert);
+	        $data['id'] = $this->db->insert_id();
+	        $this->M_General->update_kas('kas_masuk',$total);
+	        $data['status'] = TRUE;
+    		
+    	}
+        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+	}
+
+	function LoadReceipt($id_pembayaran) {
+		// Ambil data pembayaran
+		$pembayaran = $this->M_General->getByID('spp', 'id', $id_pembayaran, 'DESC')->row_array();
+		
+		// Ambil data siswa
+		$siswa = $this->M_General->getByID('siswa', 'id', $pembayaran['id_siswa'], 'DESC')->row_array();
+		// Load library PDF
+         $this->load->library('pdf');
+		
+		$pdf = new FPDF('p', 'mm', 'A5');
+		$pdf->AddPage();
+		
+		// Header
+		$pdf->SetFont('Arial', 'B', 16);
+		$pdf->Cell(0, 10, 'KWITANSI PEMBAYARAN SPP', 0, 1, 'C');
+		$pdf->SetFont('Arial', '', 12);
+		$pdf->Cell(0, 10, 'PONDOK PESANTREN MODERN AL-MUHAJIRIN', 0, 1, 'C');
+		$pdf->Ln(10);
+		
+		// Informasi Pembayaran
+		$pdf->SetFont('Arial', '', 10);
+		$pdf->Cell(40, 7, 'No. Kwitansi', 0);
+		$pdf->Cell(5, 7, ':', 0);
+		$pdf->Cell(0, 7, $pembayaran['id'], 0, 1);
+		
+		$pdf->Cell(40, 7, 'Tanggal', 0);
+		$pdf->Cell(5, 7, ':', 0);
+		$pdf->Cell(0, 7, date('d-M-Y', strtotime($pembayaran['time'])), 0, 1);
+		
+		$pdf->Cell(40, 7, 'Nama Siswa', 0);
+		$pdf->Cell(5, 7, ':', 0);
+		$pdf->Cell(0, 7, $siswa['name'], 0, 1);
+		
+		$pdf->Cell(40, 7, 'Kelas', 0);
+		$pdf->Cell(5, 7, ':', 0);
+		$pdf->Cell(0, 7, $siswa['kelas'], 0, 1);
+		
+		$pdf->Cell(40, 7, 'Bulan', 0);
+		$pdf->Cell(5, 7, ':', 0);
+		$pdf->Cell(0, 7, $pembayaran['bulan'], 0, 1);
+		
+		$pdf->Cell(40, 7, 'Nominal', 0);
+		$pdf->Cell(5, 7, ':', 0);
+		$pdf->Cell(0, 7, 'Rp ' . number_format($pembayaran['nominal'], 0, ',', '.'), 0, 1);
+		
+		$pdf->Ln(10);
+		
+		// Tanda tangan
+		$pdf->Cell(0, 7, 'Petugas', 0, 1, 'R');
+		$pdf->Ln(15);
+		$pdf->Cell(0, 7, 'Ustdzh Neng Fitri Zihan Noviana', 0, 1, 'R');
+		
+
+		$pdf->Output();  
+
+
+	}
+
+}
